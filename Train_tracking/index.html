@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-Time Vehicle Tracking</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <style>
+        #map {
+            height: 90vh;
+            width: 100%;
+        }
+        #stationForm {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            background: white;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 0 5px rgba(0,0,0,0.5);
+            z-index: 9999;
+        }
+    </style>
+</head>
+<body>
+    <form id="stationForm">
+        <input type="text" id="stationInput" placeholder="Enter Station Name" required>
+        <button type="submit">Track</button>
+        <button type="button" id="stopButton">Stop</button>
+    </form>
+    <div id="map"></div>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script>
+        const map = L.map('map').setView([49.487, 8.466], 13); // Default center of Mannheim
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 18,
+            attribution: '© OpenStreetMap'
+        }).addTo(map);
+    
+        let markers = {};
+        let polylines = {};
+        let updateInterval = null;
+    
+        async function updateVehicles(stationName) {
+            try {
+                const response = await fetch(`http://127.0.0.1:8000/radar-data/${stationName}`);
+                if (!response.ok) {
+                    throw new Error('Failed to fetch data: ' + response.statusText);
+                }
+                const data = await response.json();
+                const vehicles = data.movements;
+    
+                if (!vehicles.length) {
+                    console.log("No vehicles found for this station.");
+                    return;
+                }
+    
+                // Calculate central point of all vehicles to fly to
+                let centralLat = 0, centralLng = 0;
+                vehicles.forEach(vehicle => {
+                    centralLat += vehicle.location.latitude;
+                    centralLng += vehicle.location.longitude;
+                });
+                centralLat /= vehicles.length;
+                centralLng /= vehicles.length;
+    
+                // Fly to the central point of the vehicles
+                map.flyTo([centralLat, centralLng], 12); // Adjust zoom level as needed
+    
+                // Clear existing markers and polylines if new station is loaded
+                Object.values(markers).forEach(marker => marker.remove());
+                markers = {};
+                Object.values(polylines).forEach(polyline => polyline.remove());
+                polylines = {};
+    
+                vehicles.forEach(vehicle => {
+                    const { latitude, longitude } = vehicle.location;
+                    const vehicleId = vehicle.tripId;
+    
+                    // Create a descriptive popup content
+                    let popupContent = `<strong>Direction:</strong> ${vehicle.direction}<br>
+                                        <strong>Line:</strong> ${vehicle.line.name}<br>
+                                        <strong>Mode:</strong> ${vehicle.line.mode}<br>
+                                        <strong>Next stops:</strong><ul>`;
+                    vehicle.nextStopovers.forEach(stop => {
+                        popupContent += `<li>${stop.stop.name} - Departure: ${stop.plannedDeparture ? stop.plannedDeparture : 'N/A'}</li>`;
+                    });
+                    popupContent += `</ul>`;
+    
+                    // Update or create new marker
+                    markers[vehicleId] = L.marker([latitude, longitude], {title: vehicle.line.name})
+                                          .addTo(map)
+                                          .bindPopup(popupContent);
+    
+                    // Update or create new polyline
+                    const latlngs = vehicle.polyline.features.map(feature => [
+                        feature.geometry.coordinates[1], // Latitude
+                        feature.geometry.coordinates[0]  // Longitude
+                    ]);
+                    polylines[vehicleId] = L.polyline(latlngs, { color: 'red' }).addTo(map);
+                });
+            } catch (error) {
+                console.error(error);
+            }
+        }
+    
+        document.getElementById('stationForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const stationName = document.getElementById('stationInput').value.trim();
+            if (stationName) {
+                if (updateInterval) clearInterval(updateInterval);
+                updateVehicles(stationName);
+                updateInterval = setInterval(() => updateVehicles(stationName), 30000); // Update every 30 seconds
+            }
+        });
+    
+        document.getElementById('stopButton').addEventListener('click', function() {
+            if (updateInterval) {
+                clearInterval(updateInterval);
+                updateInterval = null;
+                console.log('Tracking stopped');
+            }
+        });
+    </script>    
+</body>
+</html>
