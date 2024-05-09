@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deutschline</title>
+    <link rel="stylesheet" type="text/css" href="static/styles.css">
+</head>
+
+<body>
+    <div class="container">
+        <img src="C:\Users\SHEKH RAYYAL\git\deutschline\frontend\logo.png" alt="My Logo" width="400" height="100">
+        </img>
+        <form id="booking-form">
+            <div class="form-group">
+                <label for="current-location">Current Location:</label>
+                <select id="current-location" name="current-location"></select>
+            </div>
+            <div class="form-group">
+                <label for="destination">Destination:</label>
+                <select id="destination" name="destination"></select>
+            </div>
+            <div class="form-group">
+                <label for="date">Date:</label>
+                <input type="date" id="date" name="date">
+            </div>
+            <div class="form-group">
+                <label for="time">Time:</label>
+                <input type="time" id="time" name="time">
+            </div>
+            <div class="form-group">
+                <label for="class">Class:</label>
+                <select id="class" name="class">
+                    <option>Select</option>
+                    <option value="first">First Class</option>
+                    <option value="second">Second Class</option>
+                </select>
+            </div>
+            <button type="submit" id="search-trains">Search Trains</button>
+        </form>
+    </div>
+    <script src="static/script.js"></script>
+    <script>
+        document.getElementById("booking-form").addEventListener("submit", function(event) {
+            event.preventDefault(); // Prevent default form submission
+
+            function formatDate(inputDate) {
+                const dateObj = new Date(inputDate);
+                const day = String(dateObj.getDate()).padStart(2, '0');
+                const month = String(dateObj.getMonth() + 1).padStart(2, '0'); // Months are zero-based
+                const year = dateObj.getFullYear();
+                return `${day}-${month}-${year}`;
+            }
+
+            // Get form values
+            const currentLocation = document.getElementById("current-location").value;
+            const destination = document.getElementById("destination").value;
+            var date = document.getElementById("date").value;
+            const time = document.getElementById("time").value;
+            const travelClass = document.getElementById("class").value;
+            date = formatDate(date)
+            // Construct the query string
+            const queryString = `?current_location=${encodeURIComponent(currentLocation)}&destination=${encodeURIComponent(destination)}&class=${encodeURIComponent(travelClass)}&date=${encodeURIComponent(date)}&time=${encodeURIComponent(time)}`;
+
+
+            function request(url) {
+                var request = new XMLHttpRequest()
+                request.open("GET", url, false)
+                request.send(null)
+
+                if (request.status == 200) {
+                    return request.responseText
+                }
+            }
+    
+            let trainDetails = request("http://localhost:5000/deutschline" + queryString)
+            trainDetailsJSON = JSON.parse(trainDetails)
+            trainDetailsJSON.forEach(element => {
+                element['train_date']=date
+                element['class']=travelClass
+            });
+            sessionStorage.setItem('trainDetails', JSON.stringify(trainDetailsJSON))
+            window.location.href = "trains.html"
+            
+            // Redirect to the trains.html page with the query string
+            //window.location.href = `trains.html${queryString}`;
+        });
+    </script>
+</body>
+
+</html>

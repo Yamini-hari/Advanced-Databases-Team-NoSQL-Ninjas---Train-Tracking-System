@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Available Trains</title>
+    <style>
+        /* Styles for the container */
+        .container {
+            margin: 0 auto;
+            width: 80%;
+            /* Adjust as needed */
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+
+        /* Styles for the train box */
+        .train-box {
+            border: 1px solid #000;
+            padding: 10px;
+            border-radius: 8px;
+            background-color: #fff;
+            margin-top: 20px;
+            /* Separate each train box */
+        }
+
+        /* Styles for the train time */
+        .train-time {
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        /* Styles for the train route */
+        .train-route {
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+
+        /* Styles for the train price */
+        .train-price {
+            font-size: 18px;
+        }
+
+        /* Styles for the book button */
+        .book-button {
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .book-button:hover {
+            background-color: #0056b3;
+        }
+
+        /* Styles for the line box */
+        .line-box {
+            display: flex;
+            align-items: center;
+        }
+
+        .line {
+            flex-grow: 1;
+            border-top: 1px solid #000;
+        }
+
+        /* Styles for the route container */
+        .route-container {
+            display: flex;
+            justify-content: space-between;
+            padding: 0 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div>
+            <img src="C:\Users\SHEKH RAYYAL\git\deutschline\frontend\logo.png" alt="My Logo" width="400" height="100">
+            </img>
+        </div>
+        <div id="trainBoxes"></div>
+    </div>
+
+    <script>
+        var trainsData = JSON.parse(sessionStorage.getItem('trainDetails'))
+        console.log(trainsData)
+        // JSON data
+        /* const trainsData = [
+            {
+                "class": "Second Class",
+                "current_location": "Munich Hauptbahnhof",
+                "destination": "Mannheim Hauptbahnhof",
+                "ticket_fare": 150.0,
+                "train_arrival": "10:10",
+                "train_number": "ice2",
+                "train_time": "08:00"
+            },
+            {
+                "class": "Second Class",
+                "current_location": "Munich Hauptbahnhof",
+                "destination": "Mannheim Hauptbahnhof",
+                "ticket_fare": 132.0,
+                "train_arrival": "17:10",
+                "train_number": "ice2",
+                "train_time": "15:00"
+            },
+            {
+                "class": "Second Class",
+                "current_location": "Munich Hauptbahnhof",
+                "destination": "Mannheim Hauptbahnhof",
+                "ticket_fare": 120.0,
+                "train_arrival": "23:10",
+                "train_number": "ice2",
+                "train_time": "21:00"
+            }
+        ];
+ */
+
+        // Function to generate train boxes
+        function generateTrainBoxes() {
+            const trainBoxesDiv = document.getElementById('trainBoxes');
+
+            trainsData.forEach(train => {
+                const trainBox = document.createElement('div');
+                trainBox.classList.add('train-box');
+
+                const trainDetails = document.createElement('div');
+                trainDetails.classList.add('train-details');
+
+                const lineBox = document.createElement('div');
+                lineBox.classList.add('line-box');
+
+                const trainTimeDeparture = document.createElement('div');
+                trainTimeDeparture.classList.add('train-time');
+                trainTimeDeparture.textContent = train.train_time;
+
+                const line = document.createElement('div');
+                line.classList.add('line');
+
+                const trainTimeArrival = document.createElement('div');
+                trainTimeArrival.classList.add('train-time');
+                trainTimeArrival.textContent = train.train_arrival;
+
+                const routeContainer = document.createElement('div');
+                routeContainer.classList.add('route-container');
+
+                const trainRouteSource = document.createElement('div');
+                trainRouteSource.classList.add('train-route');
+                trainRouteSource.textContent = train.current_location;
+
+                const trainRouteDestination = document.createElement('div');
+                trainRouteDestination.classList.add('train-route');
+                trainRouteDestination.textContent = train.destination;
+
+                const trainPrice = document.createElement('div');
+                trainPrice.classList.add('train-price');
+                trainPrice.textContent = '€' + train.ticket_fare.toFixed(2);
+
+                const bookButton = document.createElement('button');
+                bookButton.classList.add('book-button');
+                bookButton.textContent = 'Book';
+                bookButton.onclick = function () {
+                    // Extracting values
+                    const departureTime = trainTimeDeparture.textContent;
+                    const arrivalTime = trainTimeArrival.textContent;
+                    const source = trainRouteSource.textContent;
+                    const destination = trainRouteDestination.textContent;
+                    const price = train.ticket_fare.toFixed(2);
+
+                    // Creating JSON object
+                    const bookingDetails = {
+                        departureTime: departureTime,
+                        arrivalTime: arrivalTime,
+                        source: source,
+                        destination: destination,
+                        price: price
+                    };
+
+                    bookingDetails['train_demand']=train.train_demand
+                    bookingDetails['train_date']=train.train_date
+                    bookingDetails['class']=train.class
+                    bookingDetails['train_number']=train.train_number
+                    
+
+                    // Converting to JSON string
+                    const bookingJSON = JSON.stringify(bookingDetails);
+                    console.log('bookingDetails', bookingJSON)
+                    // Storing in local storage or sending to another page
+                    sessionStorage.setItem('bookingDetails', bookingJSON); // Storing in local storage
+                    window.location.href = 'booking.html'; // Redirecting to booking page
+                };
+
+                lineBox.appendChild(trainTimeDeparture);
+                lineBox.appendChild(line);
+                lineBox.appendChild(trainTimeArrival);
+
+                routeContainer.appendChild(trainRouteSource);
+                routeContainer.appendChild(trainRouteDestination);
+
+                trainDetails.appendChild(lineBox);
+                trainDetails.appendChild(routeContainer);
+                trainDetails.appendChild(trainPrice);
+                trainDetails.appendChild(bookButton);
+
+                trainBox.appendChild(trainDetails);
+
+                trainBoxesDiv.appendChild(trainBox);
+            });
+        }
+
+
+        // Generate train boxes when the page loads
+        window.onload = generateTrainBoxes;
+    </script>
+</body>
+
+</html>

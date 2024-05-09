@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confirm Booking</title>
+    <style>
+        /* Styles for the main container */
+        .main-container {
+            display: flex;
+            justify-content: center; /* Center horizontally */
+            align-items: center; /* Center vertically */
+            height: 100vh; /* Make the container full height of the viewport */
+        }
+
+        /* Styles for the container */
+        .container {
+            text-align: center;
+            border: 1px solid #ccc; /* Border around the container */
+            padding: 20px;
+            border-radius: 10px; /* Rounded corners */
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); /* Box shadow for a subtle effect */
+        }
+
+        /* Styles for the form */
+        form {
+            margin-top: 20px;
+        }
+
+        /* Styles for the form group */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        /* Styles for the ticket selection container */
+        .ticket-selection-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Styles for the increment and decrement buttons */
+        .ticket-selection button {
+            width: 30px;
+            height: 30px;
+            font-size: 18px;
+            cursor: pointer;
+            border: none;
+            background-color: #f0f0f0;
+        }
+
+        /* Styles for the input field */
+        .ticket-selection input {
+            width: 50px;
+            height: 30px;
+            font-size: 18px;
+            text-align: center;
+        }
+
+        /* Styles for the confirmation message */
+        #confirmation-message {
+            margin-top: 20px;
+            font-weight: bold;
+            color: green;
+        }
+    </style>
+    <script>
+        function request(url, method, data) {
+    var request = new XMLHttpRequest();
+    request.open(method, url, false);
+    request.setRequestHeader('Content-Type', 'application/json');
+    request.send(JSON.stringify(data));
+
+    if (request.status == 200 || request.status == 201) {
+        return request.responseText;
+    }
+}
+
+        var bookingData = JSON.parse(sessionStorage.getItem('bookingDetails'));
+        console.log(bookingData);
+    
+        // JavaScript function to handle increment and decrement buttons for ticket selection
+        function incrementTicket() {
+            var ticketInput = document.getElementById('ticket-count');
+            var currentCount = parseInt(ticketInput.value);
+            if (!isNaN(currentCount)) {
+                ticketInput.value = currentCount + 1;
+            }
+        }
+    
+        function decrementTicket() {
+            var ticketInput = document.getElementById('ticket-count');
+            var currentCount = parseInt(ticketInput.value);
+            if (!isNaN(currentCount) && currentCount > 1) {
+                ticketInput.value = currentCount - 1;
+            }
+        }
+    
+        
+    
+        // JavaScript function to handle form submission and display confirmation message
+        function confirmBooking() {
+            var email = document.getElementById('email').value;
+            var ticketCount = document.getElementById('ticket-count').value;
+            
+            
+    
+            // Update bookingData with email and ticket count
+            bookingData['email'] = email;
+            bookingData['number_of_tickets'] = parseInt(ticketCount);
+
+            console.log(bookingData)
+            let bookingResult = request('http://127.0.0.1:5000/create_booking','POST', bookingData)
+            bookingResultJson = JSON.parse(bookingResult)
+            console.log(bookingResultJson)
+    
+            // Display confirmation message
+            var confirmationMessage = 'Your Ticket is now booked! Your Booking ID is ' + bookingResultJson['booking_id'];
+            document.getElementById('confirmation-message').innerText = confirmationMessage;
+            
+    
+            // Prevent form submission (since we're handling it with JavaScript)
+            return false;
+        }
+    </script>    
+</head>
+
+<body>
+    <div class="main-container">
+        <div class="container">
+            <img src="C:\Users\SHEKH RAYYAL\git\deutschline\frontend\logo.png" alt="My Logo" width="400" height="100">
+            <h2>Book your Ticket!</h2>
+            <form id="booking-form" onsubmit="return confirmBooking()">
+                <div class="form-group">
+                    <label for="email">Email:</label>
+                    <br>
+                    <input type="email" id="email" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label for="ticket-count">Number of Tickets:</label>
+                    <div class="ticket-selection-container">
+                        <button type="button" onclick="decrementTicket()">-</button>
+                        <input type="text" id="ticket-count" name="ticket-count" value="1" readonly>
+                        <button type="button" onclick="incrementTicket()">+</button>
+                    </div>
+                </div>
+                <button type="submit">Confirm Booking</button>
+            </form>
+            <div id="confirmation-message"></div>
+        </div>
+    </div>
+</body>
+
+</html>
