@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Route Results</title>
+    
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f3f4f6; /* Light gray background */
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            background-color: #ffffff; /* White background */
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1); /* Shadow effect */
+            padding: 20px;
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .header {
+            font-size: 24px;
+            color: #333333; /* Dark gray text */
+            margin-bottom: 20px;
+        }
+
+        .route-card {
+            background-color: #f8f9fa; /* Light gray background */
+            border-radius: 8px;
+            box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1); /* Shadow effect */
+            padding: 15px;
+            margin-bottom: 15px;
+            text-align: left;
+        }
+
+        .route-card h2 {
+            font-size: 20px;
+            color: #333333; /* Dark gray text */
+            margin-bottom: 5px;
+            cursor: pointer; /* Add cursor pointer to indicate clickable */
+        }
+
+        .route-card p {
+            font-size: 16px;
+            color: #666666; /* Gray text */
+            margin: 0;
+        }
+
+        .optimal-route {
+            margin-top: 20px;
+        }
+
+        .no-route {
+            margin-top: 20px;
+            font-size: 20px;
+            color: #ff0000; /* Red text */
+        }
+
+        .back-button {
+            background-color: #007bff; /* Blue button */
+            color: #ffffff; /* White text */
+            border: none;
+            border-radius: 5px;
+            padding: 10px 20px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .back-button:hover {
+            background-color: #0056b3; /* Dark blue hover */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <p class="header">Train Routes Available Now</p>
+        
+        <!-- Display optimal route -->
+        {% if optimal_route %}
+            <div class="route-card optimal-route">
+                <h2>Optimal Route: {{ optimal_route.start_station }} to {{ optimal_route.end_station }}</h2>
+                <p>Total delay: {{ optimal_route.total_delay }} </p>
+                <p>Total distance: {{ optimal_route.total_distance|int }} km</p>
+            </div>
+        {% else %}
+            <div class="no-route">No optimal route found.</div>
+        {% endif %}
+
+        {% for route in all_routes %}
+        <div class="route-card">
+            <!-- Toggle user route information -->
+            <h2 onclick="toggleUserRoute(event)">Route from {{ route.start_station }} to {{ route.end_station }}</h2>
+            <div id="user-route-{{ loop.index }}" style="display: none;">
+                {% if route.user_route %}
+                    <h3>User Route Information</h3>
+                    <p>Total delay: {{ route.user_route.total_delay }} </p>
+                    <p>Total distance: {{ route.user_route.total_distance|int }} km</p>
+                    <p>Stations visited:</p>
+                    <ul>
+                        {% for station in route.user_route.stations_visited %}
+                            <li>{{ station }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+                <!-- Display other route information -->
+                <p>Total delay: {{ route.total_delay }} </p>
+                <p>Total distance: {{ route.total_distance|int }} km</p>
+                <!-- Display stations visited for all routes -->
+                <p>Stations visited:</p>
+                <ul>
+                    {% for station in route.stations_visited %}
+                        <li>{{ station }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        {% endfor %}
+
+        <!-- Back button -->
+        <button onclick="window.location.href='/'" class="back-button">Back</button>
+    </div>
+    <script>
+        function toggleUserRoute(event) {
+            let routeCard = event.target.parentElement;
+            let userRouteDiv = routeCard.querySelector('div');
+            userRouteDiv.style.display = (userRouteDiv.style.display === 'none') ? 'block' : 'none';
+        }
+    </script>
+</body>
+</html>
