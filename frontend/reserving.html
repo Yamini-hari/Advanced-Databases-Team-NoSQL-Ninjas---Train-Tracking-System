@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Train Seat Map</title>
+    <link rel="stylesheet" href="reserve.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Train Seat Map</h1>
+        <div class="select-coach">
+            <div class="dropdown">
+                <button onclick="toggleDropdown()" class="dropbtn">Select Coach</button>
+                <div id="coachDropdown" class="dropdown-content">
+                    <!-- Options will be dynamically generated here -->
+                </div>
+            </div>
+        </div>
+        
+        <div class="train" id="trainMap">
+            <!-- Train seat map will be dynamically generated here -->
+        </div>
+
+        <!-- Add Confirm Button -->
+        <div class="confirm-button">
+            <button onclick="confirmWithSelection()">Confirm</button>
+        </div>
+    </div>
+
+    <script>
+        var data = JSON.parse(sessionStorage.getItem('bookingInfo'))
+        var bookingData = data[0]
+        function makeRequest(url) {
+            var request = new XMLHttpRequest();
+            request.open('GET', url, false);  // `false` makes the request synchronous
+            request.send(null);
+
+            if (request.status === 200) {// That's HTTP for 'ok'
+                return request.responseText
+            }
+        }
+
+        let trainData = makeRequest("http://localhost:5000/get_available_seats?train_number="+ bookingData.train_number +"&coach_number=1&from_station=" + bookingData.from_station + "&to_station=" + bookingData.to_station + "&date_time=" + bookingData.date_time)
+
+        var jsonData = JSON.parse(trainData)
+        
+        // Assume backend response contains information about coach and seat allocation
+        var backendResponse = {
+            coaches: jsonData.coachLength,
+            seatsPerCoach: jsonData.seatLength,
+            bookedSeats: jsonData.reserverdSeats // Example: seats 5, 10, 15, 20 are booked
+        };
+
+        // Function to generate dropdown options for coach selection
+        function generateCoachOptions() {
+            var coachDropdown = document.getElementById("coachDropdown");
+            coachDropdown.innerHTML = ""; // Clear existing options
+
+            for (var i = 1; i <= backendResponse.coaches; i++) {
+                var option = document.createElement("div");
+                option.classList.add("dropdown-option");
+                option.innerText = "Coach " + i;
+                option.setAttribute("data-value", i);
+                option.addEventListener("click", function() {
+                    selectCoach(this);
+                });
+                coachDropdown.appendChild(option);
+            }
+        }
+
+        // Function to toggle dropdown
+        function toggleDropdown() {
+            document.getElementById("coachDropdown").classList.toggle("show");
+        }
+
+        // Function to select coach
+        function selectCoach(option) {
+            var coachSelectBtn = document.querySelector(".dropbtn");
+            coachSelectBtn.innerText = option.innerText;
+            toggleDropdown();
+            generateSeatMap();
+        }
+
+        // Function to generate train seat map based on selected coach
+        function generateSeatMap() {
+            var selectedCoach = document.querySelector(".dropbtn").innerText.split(" ")[1];
+            console.log("SELECTED_COACH ::", selectedCoach)
+            if (selectedCoach == "Coach"){
+                selectedCoach = "1"
+            }
+
+            let trainData = makeRequest("http://localhost:5000/get_available_seats?train_number="+ bookingData.train_number +"&coach_number="+ selectedCoach + "&from_station=" + bookingData.from_station + "&to_station=" + bookingData.to_station + "&date_time=" + bookingData.date_time)
+
+            var jsonData = JSON.parse(trainData)
+
+
+            var trainMap = document.getElementById("trainMap");
+            trainMap.innerHTML = ""; // Clear existing content
+
+            var coach = document.createElement("div");
+            coach.classList.add("coach");
+
+            for (var j = 1; j <= backendResponse.seatsPerCoach; j++) {
+                var seat = document.createElement("div");
+                seat.classList.add("seat");
+                seat.innerText = j;
+
+                // Check if seat is booked
+                if ( jsonData.reserverdSeats.includes(j)) {
+                    seat.classList.add("booked");
+                    seat.title = "Booked";
+                } else {
+                    seat.title = "Seat " + j + " in Coach " + selectedCoach;
+                    liveSelectedSeats = []
+                    // Add event listener to book seat on click
+                    seat.addEventListener("click", function() {
+                        bookSeat(this, selectedCoach);
+                    });
+                }
+
+                coach.appendChild(seat);
+            }
+
+            trainMap.appendChild(coach);
+        }
+
+        // Array to store selected seats
+        var selectedSeats = [];
+
+        // Function to simulate booking or unbooking a seat
+        function bookSeat(seat, coachNumber) {
+            var seatNumber = parseInt(seat.innerText); // Get the seat number as an integer
+
+            // Check if the seat is already booked
+            var isBooked = seat.classList.contains("booked");
+
+            if (!isBooked) {
+                // If the seat is not already booked, add it to the selectedSeats array
+                selectedSeats.push(seatNumber);
+            } else {
+                // If the seat is already booked, remove it from the selectedSeats array
+                var index = selectedSeats.indexOf(seatNumber);
+                if (index !== -1) {
+                    selectedSeats.splice(index, 1);
+                }
+            }
+
+            // Toggle the booked status of the seat
+            seat.classList.toggle("booked");
+
+            // Update the title of the seat
+            seat.title = isBooked ? "Click to book" : "Booked";
+
+            // Remove duplicates from selectedSeats array
+            var uniqueSelectedSeats = [...new Set(selectedSeats)];
+
+            // Construct the object with seats and coach number
+            var selection = {
+                seats: uniqueSelectedSeats,
+                coach_number: parseInt(coachNumber)
+            };
+            
+        }
+
+        // Function to handle confirm booking with selection data
+        function confirmWithSelection() {
+            // Call generateSeatMap to update selected seats
+            generateSeatMap();
+
+            // Check if seats are selected
+            if (selectedSeats.length === 0) {
+                alert("Please select at least one seat before confirming the booking.");
+                return; // Exit function if no seats are selected
+            }
+
+            // Prompt user to confirm booking after updating selection
+            var confirmBookingPrompt = confirm("Are you sure you want to confirm the booking?");
+            if (confirmBookingPrompt) {
+                // If user confirms, call confirmBooking with the selection data
+                coach_number = document.querySelector(".dropbtn").innerText.split(" ")[1];
+                if (coach_number == "Coach"){
+                    coach_number = "1"
+                }
+                confirmBooking({
+                    seats: selectedSeats,
+                    coach_number: coach_number
+                });
+            } else {
+                // If user cancels, do nothing
+                return;
+            }
+        }
+
+        // Function to handle confirm booking
+        function confirmBooking(selection) {
+            // Prepare JSON body
+            var bookingBody = {
+                booking_id: bookingData.booking_id, // Example booking ID
+                last_name: bookingData.last_name, // Example last name
+                is_seat_reserved: true,
+                coach_number: selection.coach_number,
+                seat_numbers: selection.seats,
+                ticket_class: "Second Class"
+            };
+
+            // Make PUT request to update booking
+            fetch('http://localhost:5000/update_booking', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(bookingBody),
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Booking updated:', data);
+                sessionStorage.removeItem('bookingInfo')
+                alert("Booking confirmed!"); // Show confirmation message
+                window.location.href = "bookings.html"
+            })
+            .catch(error => {
+                console.error('There was a problem with your fetch operation:', error);
+                alert("Booking failed. Please try again later."); // Show error message
+            });
+        }
+
+
+        // Close the dropdown if the user clicks outside of it
+        window.onclick = function(event) {
+            if (!event.target.matches('.dropbtn')) {
+                var dropdowns = document.getElementsByClassName("dropdown-content");
+                var i;
+                for (i = 0; i < dropdowns.length; i++) {
+                    var openDropdown = dropdowns[i];
+                    if (openDropdown.classList.contains('show')) {
+                        openDropdown.classList.remove('show');
+                    }
+                }
+            }
+        }
+
+        // Generate the coach options and seat map when the page loads
+        window.onload = function() {
+            generateCoachOptions();
+            generateSeatMap();
+        };
+    </script>
+</body>
+</html>

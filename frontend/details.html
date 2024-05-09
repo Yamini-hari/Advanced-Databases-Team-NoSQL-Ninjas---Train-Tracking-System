@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Booking Information</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Booking Information</h1>
+        <div id="bookingDetails" class="mt-3"></div>
+        <button id="proceedBtn" onclick="nextPage()">Proceed to seat reservation</button>
+    </div>
+
+    <script>
+        var data = JSON.parse(sessionStorage.getItem('bookingInfo'));
+        var bookingData = data[0];
+
+        // Function to display booking details
+        function displayBookingDetails() {
+            var bookingDetailsDiv = document.getElementById("bookingDetails");
+            var html = "<div class='booking-info'>";
+            html += "<p><span class='label'>Train Number:</span> " + bookingData.train_number + "</p>"; // Display train number
+            html += "<p><span class='label'>From Station:</span> " + bookingData.from_station + "</p>";
+            html += "<p><span class='label'>To Station:</span> " + bookingData.to_station + "</p>";
+            html += "<p><span class='label'>Date:</span> " + formatDateAndTime(bookingData.date_time).date + "</p>";
+            html += "<p><span class='label'>Time:</span> " + formatDateAndTime(bookingData.date_time).time + "</p>";
+            html += "<p><span class='label'>First Name:</span> " + bookingData.first_name + "</p>";
+            html += "<p><span class='label'>Last Name:</span> " + bookingData.last_name + "</p>";
+            html += "<p><span class='label'>Booking ID:</span> " + bookingData.booking_id + "</p>";
+            // Check if seat is reserved
+            if (bookingData.is_seat_reserved) {
+                html += "<p><span class='label'>Coach Number:</span> " + bookingData.coach_number + "</p>"; // Display coach number
+                html += "<p><span class='label'>Seat Numbers:</span> " + bookingData.seat_numbers.join(", ") + "</p>"; // Display seat numbers
+                // Remove the button if seat is already reserved
+                var proceedBtn = document.getElementById("proceedBtn");
+                proceedBtn.style.display = "none";
+            } else {
+                var proceedBtn = document.getElementById("proceedBtn");
+                proceedBtn.style.display = "block"; // Ensure the button is visible if seat is not reserved
+            }
+            html += "</div>";
+            bookingDetailsDiv.innerHTML = html;
+        }
+
+        // Function to navigate to the next page
+        function nextPage() {
+            // Assuming here you would navigate to the next page, either using JavaScript or a server-side redirect
+            // For demonstration purposes, let's just log a message
+            console.log("Navigate to the next page...");
+            window.location.href = "reserving.html";
+        }
+
+        function formatDateAndTime(dateTimeString) {
+            
+            // Convert the string to a Date object
+            var date = new Date(dateTimeString);
+            
+            // Get the date components
+            var day = ("0" + date.getDate()).slice(-2);
+            var month = ("0" + (date.getMonth() + 1)).slice(-2);
+            var year = date.getFullYear();
+
+            // Get the time components
+            var hours = ("0" + date.getHours()).slice(-2);
+            var minutes = ("0" + date.getMinutes()).slice(-2);
+
+            // Formatted date string (DD-MM-YYYY)
+            var formattedDate = day + "-" + month + "-" + year;
+
+            // Formatted time string (HH:MM)
+            var formattedTime = hours -2 + ":" + minutes; // Daylight saving offset corrected 
+
+            return {
+                date: formattedDate,
+                time: formattedTime
+            };
+        }
+
+        // Call the function to display booking details when the page loads
+        window.onload = displayBookingDetails;
+    </script>
+</body>
+</html>
