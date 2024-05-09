@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="static/styles.css">
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/progressbar.js/1.1.0/progressbar.min.js"></script>
+    <title>Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Ubuntu+Sans:ital,wght@0,100..800;1,100..800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <h1>Dashboard</h1>
+    <form id="trainForm">
+        <label for="fromStation">From:</label>
+        <select id="fromStation" name="fromStation">
+            <option value="Berlin Hbf">Berlin Hbf</option>
+            <option value="Frankfurt(Main)Hbf">Frankfurt(Main)Hbf</option>
+            <option value="Mannheim Hbf">Mannheim Hbf</option>
+            <option value="Hamburg Hbf">Hamburg Hbf</option>
+            <option value="München Hbf">München Hbf</option>
+            <!-- Add more options manually as needed -->
+        </select>
+        <label for="toStation">To:</label>
+        <select id="toStation" name="toStation">
+            <option value="München Hbf">München Hbf</option>
+            <option value="Frankfurt(Main)Hbf">Frankfurt(Main)Hbf</option>
+            <option value="Mannheim Hbf">Mannheim Hbf</option>
+            <option value="Hamburg Hbf">Hamburg Hbf</option>
+            <option value="Berlin Hbf">Berlin Hbf</option>
+            <!-- Add more options manually as needed -->
+        </select>
+        <button type="submit">Submit</button>
+    </form>
+
+    <h2>Peak Hours</h2>
+    <div id="peakHoursGraph"></div>
+    <div class="placeholder-container">
+        <p class="placeholder-text">peak hours data likely refers to the peak hours during which trains are most heavily used or experience the highest demand. This information is valuable for both commuters and transit operators as it helps in planning schedules, managing resources, and optimizing services.</div>
+
+    <h2>Average Delay</h2>
+    <div id="averageDelayProgress" class="progressbar-text"></div>
+    <div class="placeholder-container">
+        <p class="placeholder-text">"Average delay" represents the average amount of time by which trains on a particular route are late compared to their scheduled arrival times. It's a crucial metric for assessing the punctuality and reliability of train services. This information is useful for passengers who want to plan their journeys efficiently and for transit authorities to identify areas for improvement in their operations.</p>
+    </div>
+
+    <h2>Train Frequencies</h2>
+
+    <div id="result"></div>
+    <div class="placeholder-container">
+        <p class="placeholder-text">"Train frequencies" refer to the number of trains running on a specific route within a given timeframe, typically per hour or per day. Knowing the frequency of trains helps passengers plan their trips by providing insights into how often they can expect a train to arrive. It's also essential for transit planners to ensure that service levels meet demand and that resources are allocated effectively.</p>
+    </div>
+
+
+    <script>
+         document.getElementById("trainForm").addEventListener("submit", function(event) {
+            event.preventDefault();
+            var fromStation = document.getElementById("fromStation").value;
+            var toStation = document.getElementById("toStation").value;
+            fetch("/train_info?from=" + fromStation + "&to=" + toStation)
+                .then(response => response.json())
+                .then(data => {
+                    var peakHours = data.peak_hours;
+                    var averageDelay = parseFloat(data.average_delay); // Convert to number if needed
+
+                    // Display average delay and train frequencies
+                    var resultDiv = document.getElementById("result");
+                    resultDiv.innerHTML =
+
+                        "<ul>" +
+                        Object.entries(data.train_frequencies).map(([route, frequency]) => "<li>" + route + ": " + frequency + "</li>").join("") +
+                        "</ul>";
+
+                    // Create Plotly graph
+                    var trace = {
+                        x: peakHours.map(hour => hour.toString()),
+                        y: Array(peakHours.length).fill(1),
+                        type: 'bar',
+                        marker: {
+                            color: 'rgba(0, 0, 280, 0.5)',
+                            line: {
+                                color: 'rgba(0, 0, 255, 1)',
+                                width: 0.5 // Set the width of the bar border
+                            },
+                            width: 0.5 // Set the width of the bars here
+                        }
+                    };
+                    var percentageWidth = window.innerWidth * 0.25; // 25% of the window width
+
+                    var layout = {
+                        title: 'Peak Hours',
+                        width: percentageWidth, // Apply the calculated width
+                        height: 400, // Set the height of the graph
+                        xaxis: {
+                            title: 'Hour',
+                            range: [0, 24]
+                        },
+                        yaxis: {
+                            title: 'Frequency',
+                            range: [0, 4]
+                        }
+                    };
+                    var data = [trace];
+                    Plotly.newPlot('peakHoursGraph', data, layout);
+
+                    // Check if averageDelay is greater than 0 before creating the progress bar
+                    if (averageDelay > 0) {
+                        // Update circular progress bar for average delay
+                        var progressBar = new ProgressBar.Circle('#averageDelayProgress', {
+                            color: '#007bff', // Color of the progress bar
+                            strokeWidth: 6, // Width of the progress bar
+                            trailWidth: 6, // Width of the trail (background)
+                            duration: 1500, // Animation duration in milliseconds
+                            easing: 'easeInOut', // Animation easing function
+                            text: {
+                                value: '0',
+                                style: {
+                                    // additional styles here if needed
+                                },
+                                autoStyleContainer: false // Disable text style changes
+                            },
+                            from: { color: '#007bff', width: 6 }, // Initial state of the progress bar
+                            to: { color: '#007bff', width: 6 }, // Final state of the progress bar
+                            step: function(state, circle) {
+                                circle.path.setAttribute('stroke', state.color); // Set the color of the progress bar
+                                circle.path.setAttribute('stroke-width', state.width); // Set the width of the progress bar
+                                circle.setText(Math.round(averageDelay) + ' minutes');
+                                var value = Math.round(circle.value() * 100); // Calculate the percentage value
+                                if (value === 0) {
+                                    circle.setText(''); // Hide text when value is 0
+                                } else {
+                                    circle.setText(Math.round(averageDelay) + ' minutes'); // Set text to display percentage
+                                }
+                            }
+                        });
+
+                        progressBar.animate(averageDelay / 500); // Animate the progress bar to the desired percentage
+                    } else {
+                        // Hide the progress bar if averageDelay is 0
+                        document.getElementById('averageDelayProgress').innerHTML = '';
+                    }
+                });
+        });
+
+    </script>
+</body>
+</html>

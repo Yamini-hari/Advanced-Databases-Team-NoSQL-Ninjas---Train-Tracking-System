@@ -1,0 +1,79 @@
+/* General styling */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 20px;
+}
+
+h1 {
+    margin-bottom: 20px;
+}
+
+h2 {
+    margin-top: 40px;
+    margin-bottom: 10px;
+}
+
+/* Form styling */
+form {
+    margin-bottom: 20px;
+}
+
+label {
+    display: block;
+    margin-bottom: 5px;
+}
+
+select, button {
+    margin-bottom: 10px;
+}
+
+/* Peak Hours Graph styling */
+#peakHoursGraph {
+    height: 50%;
+    width: 25%; /* Adjust width as needed */
+    margin: 10px auto; /* Center the graph */
+}
+
+/* Result and Historical Data styling */
+#result, #historicalData {
+    margin-bottom: 20px;
+}
+
+/* Average Delay Progress styling */
+#averageDelayProgress {
+    display: inline-block;
+    vertical-align: middle;
+    margin-left: auto;
+    margin-top: 180px;
+    position: relative; /* Add relative positioning to the progress bar container */
+}
+
+.progressbar-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 1.2em;
+    color: white;
+    z-index: 1; /* Ensure the text is above other elements */
+}
+.placeholder-container {
+    text-align: left; /* Align the contents to the left */
+}
+
+.placeholder-text {
+    color: black; /* Adjust color to be slightly darker */
+    font-style: normal; /* Remove italic style */
+    font-family: "Ubuntu Sans", sans-serif; /* Use a commonly accepted font */
+    font-size: 18px; /* Adjust font size */
+    margin-top: 0;
+}
+/* Basic styling for list items */
+li {
+    font-family: Arial, sans-serif; /* Use a commonly accepted font */
+    font-size: 18px; /* Adjust font size */
+    line-height: 1.5; /* Set line height for readability */
+    margin-bottom: 8px; /* Add some spacing between list items */
+    font-weight: 500; /* Make the text bold */
+}
